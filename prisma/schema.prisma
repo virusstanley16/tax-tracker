@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Register {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(255) //name of the business.
+  owner_name   String   @db.VarChar(255) //name of the owner
+  email        String   @unique @db.VarChar(255) //email of the owner
+  password     String   @db.VarChar(255) //hashed password
+  address      String   @db.VarChar(255) // Business location
+  phone        Int      @db.Int // Business phone number
+  tax_type     String   @db.VarChar(50) // the type of tax paid(business Licenses fees.)
+  payment_date DateTime //date of the last payment made
+  amount_due   Float //amount due for the business
+  description  String   @db.Text //The type of business
+  status       Status   @default(ACTIVE) // e.g., 'active', 'inactive', 'suspended'
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
