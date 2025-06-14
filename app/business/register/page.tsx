@@ -1,10 +1,13 @@
+'use client';
+
 import React from 'react';
 import { Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
-import { businessSchema } from '@/validations/businessSchema';
-import FormInput from '@/components/ui/FormInput';
-import FormSelect from '@/components/ui/FormSelect';
-import FormButton from '@/components/ui/FormButton';
+import { businessSchema } from '@/app/validations/businessSchema';
+import FormInput from '@/app/components/ui/FormInput';
+import FormSelect from '@/app/components/ui/FormSelect';
+import FormButton from '@/app/components/ui/FormButton';
+
 
 const businessTypes = [
   { value: 'Retail', label: 'Retail' },
