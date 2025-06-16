@@ -1,34 +1,39 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { store } from './store';
-import Login from './components/auth/Login';
-import BusinessRegistration from './components/business/BusinessRegistration';
-import ProtectedRoute from './components/shared/ProtectedRoute';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from './store/store';
+import { Navigation } from './components/layout/Navigation';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 
-const App: React.FC = () => {
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token } = useSelector((state: RootState) => state.auth);
+  return token ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const App = () => {
   return (
-    <Provider store={store}>
-      <Router>
-        <div className="min-h-screen bg-gray-100">
+    <Router>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <main>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
-              path="/register-business"
+              path="/dashboard"
               element={
-                <ProtectedRoute>
-                  <BusinessRegistration />
-                </ProtectedRoute>
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
               }
             />
-            {/* Add more routes here */}
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
-          <ToastContainer position="top-right" autoClose={3000} />
-        </div>
-      </Router>
-    </Provider>
+        </main>
+      </div>
+    </Router>
   );
 };
 

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '../../store/store';
-import { login } from '../../store/slices/authSlice';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import type { AppDispatch } from '../store/store';
+import { login } from '../store/slices/authSlice';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -41,14 +41,14 @@ const Login = () => {
             <Input
               type="email"
               value={email}
-              onChange={(e:any) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               placeholder="Email address"
               required
             />
             <Input
               type="password"
               value={password}
-              onChange={(e:any) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder="Password"
               required
             />
