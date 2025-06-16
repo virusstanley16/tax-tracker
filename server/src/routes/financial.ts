@@ -1,12 +1,12 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { FinancialReport } from '../models/FinancialReport';
-import { auth, checkRole } from '../middleware/auth';
+import { auth, checkRole, AuthRequest } from '../middleware/auth';
 import { calculateTax } from '../utils/taxCalculator';
 
 const router = express.Router();
 
 // Submit financial report (business only)
-router.post('/submit', auth, checkRole(['business']), async (req, res) => {
+router.post('/submit', auth, checkRole(['business']), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
       business,
@@ -42,7 +42,7 @@ router.post('/submit', auth, checkRole(['business']), async (req, res) => {
 });
 
 // Get all financial reports (government worker only)
-router.get('/', auth, checkRole(['government']), async (req, res) => {
+router.get('/', auth, checkRole(['government']), async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const reports = await FinancialReport.find()
       .populate('business', 'name ownerName')
@@ -54,7 +54,7 @@ router.get('/', auth, checkRole(['government']), async (req, res) => {
 });
 
 // Get financial reports for a specific business
-router.get('/business/:businessId', auth, async (req, res) => {
+router.get('/business/:businessId', auth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const reports = await FinancialReport.find({ business: req.params.businessId })
       .populate('submittedBy', 'name email');
@@ -65,7 +65,7 @@ router.get('/business/:businessId', auth, async (req, res) => {
 });
 
 // Update report status (government worker only)
-router.patch('/:id/status', auth, checkRole(['government']), async (req, res) => {
+router.patch('/:id/status', auth, checkRole(['government']), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { status } = req.body;
     const report = await FinancialReport.findByIdAndUpdate(
@@ -75,7 +75,8 @@ router.patch('/:id/status', auth, checkRole(['government']), async (req, res) =>
     );
 
     if (!report) {
-      return res.status(404).json({ error: 'Report not found' });
+      res.status(404).json({ error: 'Report not found' });
+      return;
     }
 
     res.json(report);
@@ -85,7 +86,7 @@ router.patch('/:id/status', auth, checkRole(['government']), async (req, res) =>
 });
 
 // Update tax status
-router.patch('/:id/tax-status', auth, async (req, res) => {
+router.patch('/:id/tax-status', auth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { taxStatus } = req.body;
     const report = await FinancialReport.findByIdAndUpdate(
@@ -95,7 +96,8 @@ router.patch('/:id/tax-status', auth, async (req, res) => {
     );
 
     if (!report) {
-      return res.status(404).json({ error: 'Report not found' });
+      res.status(404).json({ error: 'Report not found' });
+      return;
     }
 
     res.json(report);

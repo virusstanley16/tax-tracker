@@ -7,7 +7,7 @@ import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import FormInput from '../shared/FormInput';
 import { login } from '../../features/auth/authSlice';
-import type { RootState, AppDispatch } from '../../store';
+import { RootState, AppDispatch } from '../../store';
 
 const validationSchema = Yup.object().shape({
   email: Yup.string()
