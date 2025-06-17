@@ -56,6 +56,7 @@ const Register = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Full name"
+              className='bg-black'
               required
             />
             <Input
@@ -64,6 +65,7 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email address"
+              className='bg-black'
               required
             />
             <Input
@@ -72,6 +74,7 @@ const Register = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
+              className='bg-black'
               required
             />
             <Select
@@ -82,6 +85,7 @@ const Register = () => {
                 { value: 'business', label: 'Business Owner' },
                 { value: 'government', label: 'Government Worker' }
               ]}
+              className='bg-black'
             />
           </div>
 

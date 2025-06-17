@@ -68,7 +68,7 @@ export const Navigation: React.FC = () => {
                   Welcome, {user.name}
                 </span>
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={handleLogout}
                 >

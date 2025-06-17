@@ -5,6 +5,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  labelClassName?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -32,7 +34,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block bg-black text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}

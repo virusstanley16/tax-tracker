@@ -44,6 +44,7 @@ const Login = () => {
               onChange={(e:any) => setEmail(e.target.value)}
               placeholder="Email address"
               required
+              className='bg-black'
             />
             <Input
               type="password"
@@ -51,6 +52,7 @@ const Login = () => {
               onChange={(e:any) => setPassword(e.target.value)}
               placeholder="Password"
               required
+              className='bg-black'
             />
           </div>
 
