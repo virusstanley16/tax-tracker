@@ -1,336 +1,244 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
+import {
+  fetchBusinesses,
+  fetchBusinessOwners,
+  createBusiness,
+  updateBusinessStatus,
+  searchBusinesses,
+} from '../store/slices/businessSlice';
+import type { RootState, AppDispatch } from '../store';
+import Select from 'react-select';
 
-interface Business {
-  id: string;
+interface BusinessFormData {
   name: string;
-  ownerName: string;
-  email: string;
-  address: string;
-  phone: string;
-  businessType: string;
-  status: 'active' | 'inactive' | 'suspended';
-  registeredBy: {
-    name: string;
-    email: string;
-  };
-  registeredAt: string;
+  type: string;
+  registrationNumber: string;
+  ownerId: string;
 }
 
 const Businesses: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const { user } = useAuth();
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    businessType: 'all',
-  });
+  const { businesses, owners, loading, error } = useSelector((state: RootState) => state.business);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newBusiness, setNewBusiness] = useState({
+  const [searchQuery, setSearchQuery] = useState('');
+  const [formData, setFormData] = useState<BusinessFormData>({
     name: '',
-    ownerName: '',
-    email: '',
-    address: '',
-    phone: '',
-    businessType: '',
+    type: '',
+    registrationNumber: '',
+    ownerId: '',
   });
 
   useEffect(() => {
-    const fetchBusinesses = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('/api/business');
-        setBusinesses(response.data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch businesses');
-        console.error('Error fetching businesses:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    dispatch(fetchBusinesses());
+    dispatch(fetchBusinessOwners());
+  }, [dispatch]);
 
-    fetchBusinesses();
-  }, []);
-
-  const handleStatusUpdate = async (businessId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
-    try {
-      await axios.patch(`/api/business/${businessId}/status`, {
-        status: newStatus,
-      });
-
-      // Update local state
-      setBusinesses(businesses.map(business => 
-        business.id === businessId ? { ...business, status: newStatus } : business
-      ));
-    } catch (err) {
-      setError('Failed to update business status');
-      console.error('Error updating business status:', err);
-    }
-  };
-
-  const handleAddBusiness = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/business/register', newBusiness);
+      await dispatch(createBusiness(formData)).unwrap();
       setShowAddModal(false);
-      setNewBusiness({
+      setFormData({
         name: '',
-        ownerName: '',
-        email: '',
-        address: '',
-        phone: '',
-        businessType: '',
+        type: '',
+        registrationNumber: '',
+        ownerId: '',
       });
-      fetchBusinesses();
     } catch (err) {
-      console.error('Error adding business:', err);
+      console.error('Failed to create business:', err);
     }
   };
 
-  const handleRequestTaxPayment = async (businessId: string) => {
+  const handleStatusUpdate = async (id: string, status: 'active' | 'suspended' | 'deactivated') => {
     try {
-      await axios.post(`/api/financial/request-payment/${businessId}`);
-      alert('Tax payment request sent successfully');
+      await dispatch(updateBusinessStatus({ id, status })).unwrap();
     } catch (err) {
-      console.error('Error requesting tax payment:', err);
+      console.error('Failed to update status:', err);
     }
   };
 
-  const filteredBusinesses = businesses.filter(business => {
-    if (filters.status !== 'all' && business.status !== filters.status) return false;
-    if (filters.businessType !== 'all' && business.businessType !== filters.businessType) return false;
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      return (
-        business.name.toLowerCase().includes(searchLower) ||
-        business.ownerName.toLowerCase().includes(searchLower) ||
-        business.email.toLowerCase().includes(searchLower)
-      );
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query) {
+      dispatch(searchBusinesses(query));
+    } else {
+      dispatch(fetchBusinesses());
     }
-    return true;
-  });
+  };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-full">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
-  }
+  const ownerOptions = owners.map(owner => ({
+    value: owner._id,
+    label: `${owner.name} (${owner.email})`,
+  }));
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Businesses</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Businesses</h1>
         <button
           onClick={() => setShowAddModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
-          Add New Business
+          Add Business
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              placeholder="Search by name, owner, or email..."
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-            <select
-              value={filters.businessType}
-              onChange={(e) => setFilters(prev => ({ ...prev, businessType: e.target.value }))}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="all">All Types</option>
-              <option value="retail">Retail</option>
-              <option value="service">Service</option>
-              <option value="manufacturing">Manufacturing</option>
-              <option value="technology">Technology</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search businesses..."
+          value={searchQuery}
+          onChange={handleSearch}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
-      {/* Businesses Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-4">Loading...</div>
+      ) : (
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered By</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Owner
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tax Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBusinesses.map((business) => (
-                <tr key={business.id}>
+              {businesses.map((business) => (
+                <tr key={business._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{business.name}</div>
-                    <div className="text-sm text-gray-500">{business.ownerName}</div>
+                    <div className="text-sm text-gray-500">{business.registrationNumber}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{business.email}</div>
-                    <div className="text-sm text-gray-500">{business.phone}</div>
+                    <div className="text-sm text-gray-900">{business.ownerId.name}</div>
+                    <div className="text-sm text-gray-500">{business.ownerId.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {business.businessType}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {business.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      business.status === 'active' ? 'bg-green-100 text-green-800' :
-                      business.status === 'suspended' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        business.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : business.status === 'suspended'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {business.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{business.registeredBy.name}</div>
-                    <div className="text-sm text-gray-500">{business.registeredBy.email}</div>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        business.taxStatus === 'paid'
+                          ? 'bg-green-100 text-green-800'
+                          : business.taxStatus === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {business.taxStatus}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex space-x-2">
-                      {business.status !== 'active' && (
-                        <button
-                          onClick={() => handleStatusUpdate(business.id, 'active')}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Activate
-                        </button>
-                      )}
-                      {business.status !== 'suspended' && (
-                        <button
-                          onClick={() => handleStatusUpdate(business.id, 'suspended')}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Suspend
-                        </button>
-                      )}
-                      {business.status !== 'inactive' && (
-                        <button
-                          onClick={() => handleStatusUpdate(business.id, 'inactive')}
-                          className="text-yellow-600 hover:text-yellow-900"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <select
+                      value={business.status}
+                      onChange={(e) => handleStatusUpdate(business._id, e.target.value as any)}
+                      className="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspend</option>
+                      <option value="deactivated">Deactivate</option>
+                    </select>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
 
-      {/* Add Business Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Business</h3>
-              <form onSubmit={handleAddBusiness}>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Business Name</label>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Name</label>
                   <input
                     type="text"
-                    value={newBusiness.name}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Owner Name</label>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Type</label>
                   <input
                     type="text"
-                    value={newBusiness.ownerName}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, ownerName: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={newBusiness.email}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, email: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Address</label>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Registration Number</label>
                   <input
                     type="text"
-                    value={newBusiness.address}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value={formData.registrationNumber}
+                    onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={newBusiness.phone}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, phone: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    required
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Business Owner</label>
+                  <Select
+                    options={ownerOptions}
+                    onChange={(option) => setFormData({ ...formData, ownerId: option?.value || '' })}
+                    className="mt-1"
+                    placeholder="Select business owner..."
+                    isSearchable
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Business Type</label>
-                  <select
-                    value={newBusiness.businessType}
-                    onChange={(e) => setNewBusiness({ ...newBusiness, businessType: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    required
-                  >
-                    <option value="">Select a type</option>
-                    <option value="retail">Retail</option>
-                    <option value="service">Service</option>
-                    <option value="manufacturing">Manufacturing</option>
-                    <option value="technology">Technology</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="flex justify-end space-x-2">
+
+                <div className="flex justify-end space-x-3">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
