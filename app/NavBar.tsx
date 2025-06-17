@@ -14,7 +14,7 @@ const NavBar = () => {
         <House className='w-6 h-6' />
       </Link>
       <ul className='flex space-x-5'>
-        <li><Link className='text-zinc-500 hover:text-zinc-800 transition-colors' href='Taxation'>Taxation</Link></li>
+        <li><Link className='text-zinc-500 hover:text-zinc-800 transition-colors' href='taxes'>Taxation</Link></li>
         <li><Link className='text-zinc-500 hover:text-zinc-800 transition-colors' href='Dashboard'>Dashboard</Link></li>
       </ul>
     </nav>
