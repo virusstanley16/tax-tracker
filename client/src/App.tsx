@@ -40,7 +40,7 @@ const AppRoutes = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
+      <main className="w-full">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

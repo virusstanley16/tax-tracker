@@ -31,6 +31,15 @@ const Businesses: React.FC = () => {
     status: 'all',
     businessType: 'all',
   });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newBusiness, setNewBusiness] = useState({
+    name: '',
+    ownerName: '',
+    email: '',
+    address: '',
+    phone: '',
+    businessType: '',
+  });
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -66,6 +75,34 @@ const Businesses: React.FC = () => {
     }
   };
 
+  const handleAddBusiness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/business/register', newBusiness);
+      setShowAddModal(false);
+      setNewBusiness({
+        name: '',
+        ownerName: '',
+        email: '',
+        address: '',
+        phone: '',
+        businessType: '',
+      });
+      fetchBusinesses();
+    } catch (err) {
+      console.error('Error adding business:', err);
+    }
+  };
+
+  const handleRequestTaxPayment = async (businessId: string) => {
+    try {
+      await axios.post(`/api/financial/request-payment/${businessId}`);
+      alert('Tax payment request sent successfully');
+    } catch (err) {
+      console.error('Error requesting tax payment:', err);
+    }
+  };
+
   const filteredBusinesses = businesses.filter(business => {
     if (filters.status !== 'all' && business.status !== filters.status) return false;
     if (filters.businessType !== 'all' && business.businessType !== filters.businessType) return false;
@@ -90,7 +127,15 @@ const Businesses: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Businesses</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Businesses</h1>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        >
+          Add New Business
+        </button>
+      </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -211,6 +256,100 @@ const Businesses: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Business Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Business</h3>
+              <form onSubmit={handleAddBusiness}>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Business Name</label>
+                  <input
+                    type="text"
+                    value={newBusiness.name}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Owner Name</label>
+                  <input
+                    type="text"
+                    value={newBusiness.ownerName}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, ownerName: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={newBusiness.email}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, email: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Address</label>
+                  <input
+                    type="text"
+                    value={newBusiness.address}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={newBusiness.phone}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, phone: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Business Type</label>
+                  <select
+                    value={newBusiness.businessType}
+                    onChange={(e) => setNewBusiness({ ...newBusiness, businessType: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required
+                  >
+                    <option value="">Select a type</option>
+                    <option value="retail">Retail</option>
+                    <option value="service">Service</option>
+                    <option value="manufacturing">Manufacturing</option>
+                    <option value="technology">Technology</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add Business
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
