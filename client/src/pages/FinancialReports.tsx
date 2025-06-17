@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../store/store';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '../store/store';
+import { fetchBusinessReports } from '../store/slices/financialSlice';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
-
-interface FinancialReport {
-  id: string;
-  date: string;
-  type: string;
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected';
-}
+import { useAuth } from '../contexts/AuthContext';
 
 const FinancialReports = () => {
-  const [filter, setFilter] = useState('all');
-  const [reports, setReports] = useState<FinancialReport[]>([]); // TODO: Fetch from API
+  const dispatch = useDispatch<AppDispatch>();
+  const { user } = useAuth();
+  const { reports, loading, error } = useSelector((state: RootState) => state.financial);
+  const [filter, setFilter] = React.useState('all');
+
+  useEffect(() => {
+    if (user?.businessId) {
+      dispatch(fetchBusinessReports(user.businessId));
+    }
+  }, [dispatch, user?.businessId]);
 
   const filterOptions = [
     { value: 'all', label: 'All Reports' },
@@ -27,6 +29,14 @@ const FinancialReports = () => {
     ? reports
     : reports.filter(report => report.status === filter);
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-full">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="bg-white shadow rounded-lg p-6">
@@ -37,7 +47,7 @@ const FinancialReports = () => {
               options={filterOptions}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-48"
+              className="w-48 bg-black"
             />
             <Button onClick={() => window.location.href = '/submit-report'}>
               Submit New Report
@@ -50,51 +60,63 @@ const FinancialReports = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
+                  Year/Quarter
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Revenue
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  Expenses
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Net Income
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tax Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Tax Status
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredReports.map((report) => (
-                <tr key={report.id}>
+                <tr key={report._id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(report.date).toLocaleDateString()}
+                    {report.year} Q{report.quarter}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.type}
+                    ${report.revenue.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${report.amount.toLocaleString()}
+                    ${report.expenses.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${report.netIncome.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${report.taxAmount?.toLocaleString() || '0'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                      ${report.status === 'approved' ? 'bg-green-100 text-green-800' : ''}
-                      ${report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
-                      ${report.status === 'rejected' ? 'bg-red-100 text-red-800' : ''}
-                    `}>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      report.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      report.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
                       {report.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {/* TODO: Implement view details */}}
-                    >
-                      View Details
-                    </Button>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      report.taxStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                      report.taxStatus === 'overdue' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {report.taxStatus}
+                    </span>
                   </td>
                 </tr>
               ))}
