@@ -1,22 +1,22 @@
 import "@radix-ui/themes/styles.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {  Inter, Poppins } from "next/font/google";
 import NavBar from "./NavBar";
 import Image from 'next/image'
 import "./globals.css";
 import FooterPage from "./components/Footer";
 import {Theme} from "@radix-ui/themes";
 import { Providers } from './providers';
-import Layout from './components/layout/Layout';
+// import Layout from './components/layout/Layout';
 
-const geistSans = Geist({
+const geistSans = Inter({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],});
+// const geistMono = Poppins({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],});
 
 export const metadata: Metadata = {
   title: 'Tax Tracker - Business Register Application',
@@ -31,18 +31,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable}  antialiased`}
         
       >
         <Providers>
           <Theme>
             <NavBar />
             <Image src='/dgi-banner-fr.jpg' alt='dgi-banner' width={10000} height={100} />
-            <Layout>
+            {/* <Layout> */}
               <main>
                 {children}
               </main>
-            </Layout>
+            {/* </Layout> */}
             <FooterPage />
           </Theme>
         </Providers>
