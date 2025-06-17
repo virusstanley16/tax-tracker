@@ -1,26 +1,32 @@
 import React from 'react';
 import { Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
-import { paymentSchema } from '@/validations/paymentSchema';
-import FormInput from '@/components/ui/FormInput';
-import FormSelect from '@/components/ui/FormSelect';
-import FormButton from '@/components/ui/FormButton';
+import { taxSchema } from '@/app/validations/taxSchema';
+import FormInput from '@/app/components/ui/FormInput';
+import FormSelect from '@/app/components/ui/FormSelect';
+import FormButton from '@/app/components/ui/FormButton';
 
-const paymentMethods = [
-  { value: 'Bank Transfer', label: 'Bank Transfer' },
-  { value: 'Credit Card', label: 'Credit Card' },
-  { value: 'Cash', label: 'Cash' },
+const frequencies = [
+  { value: 'Monthly', label: 'Monthly' },
+  { value: 'Quarterly', label: 'Quarterly' },
+  { value: 'Annually', label: 'Annually' },
+];
+
+const categories = [
+  { value: 'Property', label: 'Property' },
+  { value: 'Income', label: 'Income' },
+  { value: 'Sales', label: 'Sales' },
   { value: 'Other', label: 'Other' },
 ];
 
-const PaymentManage = () => {
+const TaxManage = () => {
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
     try {
-      // TODO: Implement API call to create/update payment
+      // TODO: Implement API call to create/update tax
       console.log('Form values:', values);
       setSubmitting(false);
     } catch (error) {
-      console.error('Error managing payment:', error);
+      console.error('Error managing tax:', error);
       setSubmitting(false);
     }
   };
@@ -34,80 +40,67 @@ const PaymentManage = () => {
       >
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Manage Payment
+            Manage Tax
           </h2>
           <Formik
             initialValues={{
-              business: '',
-              tax: '',
-              amount: '',
+              name: '',
+              description: '',
+              rate: '',
+              frequency: '',
               dueDate: '',
-              paymentMethod: '',
-              referenceNumber: '',
-              period: {
-                start: '',
-                end: '',
-              },
-              notes: '',
+              category: '',
+              minimumAmount: '',
+              latePaymentPenalty: '',
             }}
-            validationSchema={paymentSchema}
+            validationSchema={taxSchema}
             onSubmit={handleSubmit}
           >
             {({ isSubmitting }) => (
               <Form className="space-y-6">
                 <FormInput
-                  label="Business ID"
-                  name="business"
+                  label="Tax Name"
+                  name="name"
                   required
                 />
                 <FormInput
-                  label="Tax ID"
-                  name="tax"
+                  label="Description"
+                  name="description"
                   required
                 />
                 <FormInput
-                  label="Amount"
-                  name="amount"
+                  label="Rate (%)"
+                  name="rate"
                   type="number"
                   required
                 />
+                <FormSelect
+                  label="Frequency"
+                  name="frequency"
+                  options={frequencies}
+                  required
+                />
                 <FormInput
-                  label="Due Date"
+                  label="Due Date (Day of Month)"
                   name="dueDate"
-                  type="date"
+                  type="number"
                   required
                 />
                 <FormSelect
-                  label="Payment Method"
-                  name="paymentMethod"
-                  options={paymentMethods}
+                  label="Category"
+                  name="category"
+                  options={categories}
                   required
                 />
                 <FormInput
-                  label="Reference Number"
-                  name="referenceNumber"
-                  required
+                  label="Minimum Amount"
+                  name="minimumAmount"
+                  type="number"
                 />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Payment Period</h3>
-                  <FormInput
-                    label="Start Date"
-                    name="period.start"
-                    type="date"
-                    required
-                  />
-                  <FormInput
-                    label="End Date"
-                    name="period.end"
-                    type="date"
-                    required
-                  />
-                </div>
-
                 <FormInput
-                  label="Notes"
-                  name="notes"
+                  label="Late Payment Penalty (%)"
+                  name="latePaymentPenalty"
+                  type="number"
                 />
 
                 <div className="flex justify-end space-x-4">
@@ -122,7 +115,7 @@ const PaymentManage = () => {
                     type="submit"
                     isLoading={isSubmitting}
                   >
-                    Save Payment
+                    Save Tax
                   </FormButton>
                 </div>
               </Form>
@@ -134,4 +127,4 @@ const PaymentManage = () => {
   );
 };
 
-export default PaymentManage; 
+export default TaxManage; 
