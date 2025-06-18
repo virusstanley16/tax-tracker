@@ -6,6 +6,7 @@ export interface IUser extends Document {
   password: string;
   role: 'government' | 'business';
   name: string;
+  businessProfile?: mongoose.Types.ObjectId; // Reference to business profile
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -29,6 +30,10 @@ const userSchema = new Schema<IUser>({
   name: {
     type: String,
     required: true
+  },
+  businessProfile: {
+    type: Schema.Types.ObjectId,
+    ref: 'Business'
   }
 }, {
   timestamps: true

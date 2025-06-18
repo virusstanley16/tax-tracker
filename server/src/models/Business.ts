@@ -10,6 +10,7 @@ export interface IBusiness extends Document {
   registrationDate: Date;
   status: 'active' | 'inactive' | 'suspended';
   registeredBy: mongoose.Types.ObjectId; // Reference to government worker
+  userAccount: mongoose.Types.ObjectId; // Reference to user account
 }
 
 const businessSchema = new Schema<IBusiness>({
@@ -55,6 +56,10 @@ const businessSchema = new Schema<IBusiness>({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  userAccount: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true

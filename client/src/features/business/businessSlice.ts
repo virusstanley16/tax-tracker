@@ -1,16 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
-interface Business {
-  _id: string;
-  name: string;
-  ownerName: string;
-  email: string;
-  address: string;
-  phone: string;
-  businessType: string;
-  status: 'active' | 'inactive' | 'suspended';
-}
+import type { Business } from '../../types/business';
 
 interface BusinessState {
   businesses: Business[];

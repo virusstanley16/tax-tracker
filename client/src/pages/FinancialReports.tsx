@@ -13,10 +13,10 @@ const FinancialReports = () => {
   const [filter, setFilter] = React.useState('all');
 
   useEffect(() => {
-    if (user?.businessId) {
-      dispatch(fetchBusinessReports(user.businessId));
+    if (user?.businessProfile?._id) {
+      dispatch(fetchBusinessReports(user.businessProfile._id));
     }
-  }, [dispatch, user?.businessId]);
+  }, [dispatch, user?.businessProfile?._id]);
 
   const filterOptions = [
     { value: 'all', label: 'All Reports' },
@@ -84,7 +84,7 @@ const FinancialReports = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredReports.map((report) => (
-                <tr key={report._id}>
+                <tr key={report.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {report.year} Q{report.quarter}
                   </td>

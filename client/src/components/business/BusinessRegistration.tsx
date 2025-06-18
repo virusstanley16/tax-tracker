@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { registerBusiness } from '../../features/business/businessSlice';
 import FormInput from '../shared/FormInput';
-import { RootState } from '../../store';
+import type { RootState } from '../../store';
+import { useAuth } from '../../contexts/AuthContext';
+import type { Business, BusinessFormValues } from '../../types/business';
+import type { AppDispatch } from '../../store';
+import axios from 'axios';
+
+interface BusinessUser {
+  _id: string;
+  name: string;
+  email: string;
+}
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Business name is required'),
@@ -17,11 +27,30 @@ const validationSchema = Yup.object({
 });
 
 const BusinessRegistration: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { loading, error } = useSelector((state: RootState) => state.business);
+  const [businessUsers, setBusinessUsers] = useState<BusinessUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const formik = useFormik({
+  useEffect(() => {
+    const fetchBusinessUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await axios.get('http://localhost:5000/api/auth/business-users');
+        setBusinessUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching business users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchBusinessUsers();
+  }, []);
+
+  const formik = useFormik<BusinessFormValues>({
     initialValues: {
       name: '',
       ownerName: '',
@@ -29,11 +58,30 @@ const BusinessRegistration: React.FC = () => {
       address: '',
       phone: '',
       businessType: '',
+      userId: user?._id || '',
+      status: 'active',
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
-        await dispatch(registerBusiness(values)).unwrap();
+        const selectedUser = businessUsers.find(user => user._id === values.ownerName);
+        if (!selectedUser) {
+          throw new Error('Please select a business owner');
+        }
+
+        const businessData: Omit<Business, '_id'> = {
+          name: values.name,
+          ownerName: selectedUser.name,
+          email: values.email,
+          address: values.address,
+          phone: values.phone,
+          businessType: values.businessType,
+          status: 'active',
+          userAccount: values.ownerName,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await dispatch(registerBusiness(businessData)).unwrap();
         navigate('/dashboard');
       } catch (err) {
         // Error is handled by the slice
@@ -56,35 +104,53 @@ const BusinessRegistration: React.FC = () => {
               label="Business Name"
               name="name"
               type="text"
-              formik={formik}
+              required
             />
 
-            <FormInput
-              label="Owner Name"
-              name="ownerName"
-              type="text"
-              formik={formik}
-            />
+            <div>
+              <label htmlFor="ownerName" className="block text-sm font-medium text-gray-700">
+                Business Owner
+              </label>
+              <select
+                id="ownerName"
+                name="ownerName"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.ownerName}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                disabled={loadingUsers}
+              >
+                <option value="">Select a business owner</option>
+                {businessUsers.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+              {formik.touched.ownerName && formik.errors.ownerName && (
+                <div className="mt-1 text-sm text-red-600">{formik.errors.ownerName}</div>
+              )}
+            </div>
 
             <FormInput
               label="Email"
               name="email"
               type="email"
-              formik={formik}
+              required
             />
 
             <FormInput
               label="Address"
               name="address"
               type="text"
-              formik={formik}
+              required
             />
 
             <FormInput
               label="Phone"
               name="phone"
               type="tel"
-              formik={formik}
+              required
             />
 
             <div>
@@ -119,7 +185,7 @@ const BusinessRegistration: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || loadingUsers}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 {loading ? 'Registering...' : 'Register Business'}

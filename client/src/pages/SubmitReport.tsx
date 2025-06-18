@@ -46,12 +46,12 @@ const SubmitReport = () => {
     setError(null);
 
     try {
-      if (!user?.businessId) {
-        throw new Error('Business ID not found');
+      if (!user?.businessProfile?._id) {
+        throw new Error('Business profile not found');
       }
 
       const reportData = {
-        business: user.businessId,
+        business: user.businessProfile._id,
         year: parseInt(formData.year),
         quarter: parseInt(formData.quarter),
         revenue: parseFloat(formData.revenue),

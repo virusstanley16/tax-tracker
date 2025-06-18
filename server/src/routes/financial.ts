@@ -2,6 +2,7 @@ import express, { Response } from 'express';
 import { FinancialReport } from '../models/FinancialReport';
 import { auth, checkRole, AuthRequest } from '../middleware/auth';
 import { calculateTax } from '../utils/taxCalculator';
+import { User } from '../models/User';
 
 const router = express.Router();
 
@@ -9,12 +10,19 @@ const router = express.Router();
 router.post('/submit', auth, checkRole(['business']), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
-      business,
       year,
       quarter,
       revenue,
       expenses
     } = req.body;
+
+    // Get the business profile from the authenticated user
+    const user = await User.findById(req.user._id).populate('businessProfile');
+    
+    if (!user?.businessProfile) {
+      res.status(400).json({ error: 'No business profile found for this user' });
+      return;
+    }
 
     // Calculate net income
     const netIncome = revenue - expenses;
@@ -24,7 +32,7 @@ router.post('/submit', auth, checkRole(['business']), async (req: AuthRequest, r
 
     // Create financial report
     const report = new FinancialReport({
-      business,
+      business: user.businessProfile._id,
       year,
       quarter,
       revenue,

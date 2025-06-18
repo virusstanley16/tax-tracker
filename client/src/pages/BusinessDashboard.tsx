@@ -55,15 +55,15 @@ const BusinessDashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.businessId) {
-        setError('Business ID not found');
+      if (!user?.businessProfile?._id) {
+        setError('Business profile not found');
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        const response = await axios.get(`/api/financial/business/${user.businessId}`);
+        const response = await axios.get(`/api/financial/business/${user.businessProfile._id}`);
         const reports = response.data;
 
         // Calculate summary
@@ -101,7 +101,7 @@ const BusinessDashboard: React.FC = () => {
     };
 
     fetchData();
-  }, [user?.businessId]);
+  }, [user?.businessProfile?._id]);
 
   if (loading) {
     return (

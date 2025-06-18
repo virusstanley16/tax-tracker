@@ -1,6 +1,8 @@
 import express, { Response } from 'express';
 import { Business } from '../models/Business';
+import { User } from '../models/User';
 import { auth, checkRole, AuthRequest } from '../middleware/auth';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -23,19 +25,40 @@ router.post('/register', auth, checkRole(['government']), async (req: AuthReques
       return;
     }
 
+    // Find the user account
+    const user = await User.findById(ownerName);
+    if (!user) {
+      res.status(404).json({ error: 'User account not found' });
+      return;
+    }
+
+    if (user.role !== 'business') {
+      res.status(400).json({ error: 'User must have business role' });
+      return;
+    }
+
     // Create new business
     const business = new Business({
       name,
-      ownerName,
+      ownerName: user.name,
       email,
       address,
       phone,
       businessType,
-      registeredBy: req.user._id
+      registeredBy: req.user._id,
+      userAccount: ownerName
     });
 
     await business.save();
-    res.status(201).json(business);
+
+    // Update user with business profile
+    user.businessProfile = business._id as unknown as mongoose.Types.ObjectId;
+    await user.save();
+
+    // Populate business profile for response
+    await user.populate('businessProfile');
+
+    res.status(201).json({ business, user });
   } catch (error) {
     res.status(400).json({ error: 'Error registering business' });
   }
@@ -45,7 +68,8 @@ router.post('/register', auth, checkRole(['government']), async (req: AuthReques
 router.get('/', auth, checkRole(['government']), async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
     const businesses = await Business.find()
-      .populate('registeredBy', 'name email');
+      .populate('registeredBy', 'name email')
+      .populate('userAccount', 'name email');
     res.json(businesses);
   } catch (error) {
     res.status(400).json({ error: 'Error fetching businesses' });
@@ -56,7 +80,8 @@ router.get('/', auth, checkRole(['government']), async (_req: AuthRequest, res: 
 router.get('/:id', auth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const business = await Business.findById(req.params.id)
-      .populate('registeredBy', 'name email');
+      .populate('registeredBy', 'name email')
+      .populate('userAccount', 'name email');
     
     if (!business) {
       res.status(404).json({ error: 'Business not found' });
@@ -77,7 +102,7 @@ router.patch('/:id/status', auth, checkRole(['government']), async (req: AuthReq
       req.params.id,
       { status },
       { new: true }
-    );
+    ).populate('userAccount', 'name email');
 
     if (!business) {
       res.status(404).json({ error: 'Business not found' });

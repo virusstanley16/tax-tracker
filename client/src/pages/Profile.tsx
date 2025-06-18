@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../store/store';
+import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 
 const Profile = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: user?.businessProfile?.phone || '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,12 +73,40 @@ const Profile = () => {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-              <p className="mt-1 text-lg text-gray-900">{user?.phone || 'Not provided'}</p>
+              <p className="mt-1 text-lg text-gray-900">{user?.businessProfile?.phone || 'Not provided'}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Role</h3>
               <p className="mt-1 text-lg text-gray-900 capitalize">{user?.role}</p>
             </div>
+
+            {user?.role === 'business' && user?.businessProfile && (
+              <div className="mt-8 border-t pt-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Information</h2>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Business Name</h3>
+                    <p className="mt-1 text-lg text-gray-900">{user.businessProfile.name}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Owner Name</h3>
+                    <p className="mt-1 text-lg text-gray-900">{user.businessProfile.ownerName}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Business Type</h3>
+                    <p className="mt-1 text-lg text-gray-900 capitalize">{user.businessProfile.businessType}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Address</h3>
+                    <p className="mt-1 text-lg text-gray-900">{user.businessProfile.address}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                    <p className="mt-1 text-lg text-gray-900 capitalize">{user.businessProfile.status}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -6,7 +6,16 @@ interface User {
   name: string;
   email: string;
   role: 'business' | 'government';
-  businessId?: string;
+  businessProfile?: {
+    _id: string;
+    name: string;
+    ownerName: string;
+    email: string;
+    address: string;
+    phone: string;
+    businessType: string;
+    status: 'active' | 'inactive' | 'suspended';
+  };
 }
 
 interface AuthContextType {

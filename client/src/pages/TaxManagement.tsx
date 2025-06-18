@@ -39,7 +39,7 @@ const TaxManagement: React.FC = () => {
       try {
         setLoading(true);
         // Fetch financial reports for the business
-        const response = await axios.get(`/api/financial/business/${user?.businessId}`);
+        const response = await axios.get(`/api/financial/business/${user?.businessProfile?._id}`);
         const reports = response.data;
 
         // Calculate tax summary
@@ -80,10 +80,10 @@ const TaxManagement: React.FC = () => {
       }
     };
 
-    if (user?.businessId) {
+    if (user?.businessProfile?._id) {
       fetchTaxData();
     }
-  }, [user?.businessId]);
+  }, [user?.businessProfile?._id]);
 
   const handlePayment = async (reportId: string) => {
     try {
@@ -93,7 +93,7 @@ const TaxManagement: React.FC = () => {
       });
 
       // Refresh tax data
-      const response = await axios.get(`/api/financial/business/${user?.businessId}`);
+      const response = await axios.get(`/api/financial/business/${user?.businessProfile?._id}`);
       const reports = response.data;
 
       // Update tax summary
