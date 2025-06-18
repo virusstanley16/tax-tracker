@@ -23,10 +23,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 const RoleBasedRoute: React.FC<{ children: React.ReactNode; allowedRole: string }> = ({ children, allowedRole }) => {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
+  const { user } = useAuth();
   return user?.role === allowedRole ? <>{children}</> : <Navigate to="/dashboard" />;
 };
 

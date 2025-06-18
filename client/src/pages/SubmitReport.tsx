@@ -1,46 +1,69 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../store/store';
+import { submitFinancialReport } from '../store/slices/financialSlice';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ReportFormData {
-  type: string;
-  amount: string;
-  date: string;
-  description: string;
-  attachments: File[];
+  year: string;
+  quarter: string;
+  revenue: string;
+  expenses: string;
 }
 
 const SubmitReport = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ReportFormData>({
-    type: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    attachments: [],
+    year: new Date().getFullYear().toString(),
+    quarter: '1',
+    revenue: '',
+    expenses: '',
   });
 
-  const reportTypes = [
-    { value: 'income', label: 'Income Report' },
-    { value: 'expense', label: 'Expense Report' },
-    { value: 'tax', label: 'Tax Report' },
-    { value: 'other', label: 'Other' },
+  const quarters = [
+    { value: '1', label: 'Q1 (Jan - Mar)' },
+    { value: '2', label: 'Q2 (Apr - Jun)' },
+    { value: '3', label: 'Q3 (Jul - Sep)' },
+    { value: '4', label: 'Q4 (Oct - Dec)' },
   ];
+
+  const years = Array.from({ length: 5 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { value: year.toString(), label: year.toString() };
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement report submission logic
-    navigate('/financial-reports');
-  };
+    setLoading(true);
+    setError(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData({
-        ...formData,
-        attachments: Array.from(e.target.files),
-      });
+    try {
+      if (!user?.businessId) {
+        throw new Error('Business ID not found');
+      }
+
+      const reportData = {
+        business: user.businessId,
+        year: parseInt(formData.year),
+        quarter: parseInt(formData.quarter),
+        revenue: parseFloat(formData.revenue),
+        expenses: parseFloat(formData.expenses),
+      };
+
+      await dispatch(submitFinancialReport(reportData)).unwrap();
+      navigate('/financial-reports');
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit report. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,67 +72,70 @@ const SubmitReport = () => {
       <div className="bg-white shadow rounded-lg p-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">Submit Financial Report</h1>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Select
-            label="Report Type"
-            options={reportTypes}
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            required
-          />
-
-          <Input
-            label="Amount"
-            type="number"
-            value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-            required
-            min="0"
-            step="0.01"
-            className='bg-black my-2'
-          />
-
-          <Input
-            label="Date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            required
-            className='bg-black my-2'
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year
+              </label>
+              <Select
+                options={years}
+                value={formData.year}
+                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                required
+                className="bg-black"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Quarter
+              </label>
+              <Select
+                options={quarters}
+                value={formData.quarter}
+                onChange={(e) => setFormData({ ...formData, quarter: e.target.value })}
+                required
+                className="bg-black"
+              />
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              Revenue
             </label>
-            <textarea
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-black"
-              rows={4}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            <Input
+              type="number"
+              value={formData.revenue}
+              onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
               required
-              // className='bg-black my-2'
+              min="0"
+              step="0.01"
+              placeholder="Enter total revenue"
+              className="bg-black"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attachments
+              Expenses
             </label>
-            <input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100"
+            <Input
+              type="number"
+              value={formData.expenses}
+              onChange={(e) => setFormData({ ...formData, expenses: e.target.value })}
+              required
+              min="0"
+              step="0.01"
+              placeholder="Enter total expenses"
+              className="bg-black"
             />
-            <p className="mt-1 text-sm text-gray-500">
-              Upload supporting documents (PDF, images, etc.)
-            </p>
           </div>
 
           <div className="flex justify-end space-x-4">
@@ -117,10 +143,13 @@ const SubmitReport = () => {
               type="button"
               variant="secondary"
               onClick={() => navigate('/financial-reports')}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit">Submit Report</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Submitting...' : 'Submit Report'}
+            </Button>
           </div>
         </form>
       </div>

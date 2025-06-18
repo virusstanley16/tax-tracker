@@ -55,9 +55,15 @@ const BusinessDashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user?.businessId) {
+        setError('Business ID not found');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await axios.get(`/api/financial/business/${user?.businessId}`);
+        const response = await axios.get(`/api/financial/business/${user.businessId}`);
         const reports = response.data;
 
         // Calculate summary
@@ -94,17 +100,25 @@ const BusinessDashboard: React.FC = () => {
       }
     };
 
-    if (user?.businessId) {
-      fetchData();
-    }
+    fetchData();
   }, [user?.businessId]);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-full">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   // Prepare chart data
@@ -172,7 +186,7 @@ const BusinessDashboard: React.FC = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue vs Expenses Line Chart */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-600 mb-4">Revenue vs Expenses</h3>
